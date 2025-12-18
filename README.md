@@ -56,7 +56,7 @@ decrypted = receiver.decrypt(encrypted)
 
 ## Features
 
-### ✅ Currently Supported (v0.1.0-beta)
+### Currently Supported (v0.1.0-beta)
 
 - **ML-KEM-768** - NIST-standardized key encapsulation (FIPS 203)
 - **ML-KEM-1024** - Higher security level for sensitive applications
@@ -66,7 +66,7 @@ decrypted = receiver.decrypt(encrypted)
 - **Type Safety** - Comprehensive type hints for better IDE support
 - **Comprehensive Tests** - >90% code coverage
 
-### 🔮 Planned Features (v0.2+)
+### Planned Features (v0.2+)
 
 - ML-DSA (Dilithium) digital signatures
 - Django/Flask/FastAPI integrations
@@ -155,8 +155,8 @@ recovered_secret = kem.decapsulate(keypair.secret_key, ciphertext)
 
 See the [`examples/`](examples/) directory for more:
 
-- [`basic_encryption.py`](examples/basic_encryption.py) - Simple encryption/decryption
-- [`sender_receiver.py`](examples/sender_receiver.py) - Two-party communication
+- [basic_encryption.py](examples/basic_encryption.py) - Simple encryption/decryption
+- [sender_receiver.py](examples/sender_receiver.py) - Two-party communication
 
 ## Security Considerations
 
@@ -271,7 +271,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📧 Email: support@quantumcrypt.dev
+- 📧 Email: lilice308@gmail.com
 - 💬 Discussions: [GitHub Discussions](https://github.com/quantumcrypt/quantumcrypt/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/quantumcrypt/quantumcrypt/issues)
 - 📖 Docs: [quantumcrypt.readthedocs.io](https://quantumcrypt.readthedocs.io)

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "QuantumCrypt Contributors"}
+    {name = "Izumi"}
 ]
 keywords = ["cryptography", "post-quantum", "pqc", "nist", "encryption", "ml-kem", "kyber"]
 classifiers = [
