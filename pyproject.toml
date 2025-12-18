@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantumcrypt"
+version = "0.1.0-beta"
+description = "Developer-friendly Python library for post-quantum cryptography"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "QuantumCrypt Contributors"}
+]
+keywords = ["cryptography", "post-quantum", "pqc", "nist", "encryption", "ml-kem", "kyber"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security :: Cryptography",
+]
+
+dependencies = [
+    "liboqs-python>=0.10.0",
+    "cryptography>=41.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+django = [
+    "django>=4.0",
+]
+flask = [
+    "flask>=2.0",
+]
+fastapi = [
+    "fastapi>=0.100",
+]
+
+[project.urls]
+Homepage = "https://github.com/quantumcrypt/quantumcrypt"
+Documentation = "https://quantumcrypt.readthedocs.io"
+Repository = "https://github.com/quantumcrypt/quantumcrypt"
+"Bug Tracker" = "https://github.com/quantumcrypt/quantumcrypt/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["quantumcrypt*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=quantumcrypt --cov-report=html --cov-report=term"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "I", "N", "W"]
