@@ -40,6 +40,7 @@ class SecureChannel:
         self,
         keypair: Optional[KeyPair] = None,
         algorithm: str = "ML-KEM-768",
+        hybrid: bool = False,
     ):
         """
         Initialize a SecureChannel.
@@ -73,7 +74,7 @@ class SecureChannel:
             self.keypair = self._kem.generate_keypair()
 
     @classmethod
-    def create(cls, algorithm: str = "ML-KEM-768") -> "SecureChannel":
+    def create(cls, algorithm: str = "ML-KEM-768", hybrid: bool = False) -> "SecureChannel":
         """
         Create a new SecureChannel with a fresh keypair.
 
@@ -82,6 +83,7 @@ class SecureChannel:
 
         Args:
             algorithm: KEM algorithm ("ML-KEM-768" or "ML-KEM-1024")
+            hybrid: Whether to use hybrid encryption mode (default: False)
 
         Returns:
             Initialized SecureChannel ready for encryption
@@ -90,7 +92,7 @@ class SecureChannel:
             >>> channel = SecureChannel.create()
             >>> encrypted = channel.encrypt(b"hello world")
         """
-        return cls(algorithm=algorithm)
+        return cls(algorithm=algorithm, hybrid=hybrid)
 
     @classmethod
     def from_public_key(cls, public_key: bytes, algorithm: str = "ML-KEM-768") -> "SecureChannel":
