@@ -1,65 +1,66 @@
-import Image from "next/image";
+import Navbar from "@/components/Navbar";
 import styles from "./page.module.css";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
+    <div className={styles.container}>
+      <Navbar />
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+        <section className={styles.hero}>
+          <span className="badge">NIST FIPS 203 & 204 Compliant</span>
+          <h1 className={styles.title}>
+            The Architecture of <br />
+            <span className="gradient-text">Post-Quantum Persistence.</span>
+          </h1>
+          <p className={styles.description}>
+            QuantumCrypt is a highly-engineered PQC toolkit for Python. Native
+            speed. Lattice-based security. Hybrid classical-quantum protocols
+            designed for the next decade of data protection.
           </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div className={styles.cta}>
+            <Link href="/docs" className={styles.primary}>
+              Explore Documentation
+            </Link>
+            <Link href="/docs/installation" className={styles.secondary}>
+              Quick Install
+            </Link>
+          </div>
+        </section>
+
+        <section className={styles.grid}>
+          <div className="card">
+            <h3>Lattice-Based KEM</h3>
+            <p>
+              Implement Module Learning With Errors (ML-KEM) to establish
+              secrets that remain unbreakable by future cryptanalytic quantum
+              computers.
+            </p>
+            <Link href="/docs/kem" className={styles.more}>
+              Learn about ML-KEM →
+            </Link>
+          </div>
+          <div className="card">
+            <h3>FIPS 204 Signatures</h3>
+            <p>
+              Deploy ML-DSA (Dilithium) for robust, identity-verifying digital
+              signatures across three standard NIST security levels.
+            </p>
+            <Link href="/docs/signatures" className={styles.more}>
+              Sign and Verify →
+            </Link>
+          </div>
+          <div className="card">
+            <h3>Hybrid Handshake</h3>
+            <p>
+              Bridge the gap with X25519 + ML-KEM hybrid modes. Stay compatible
+              with today's standards while preparing for tomorrow.
+            </p>
+            <Link href="/docs/hybrid" className={styles.more}>
+              Handshake Spec →
+            </Link>
+          </div>
+        </section>
       </main>
     </div>
   );
