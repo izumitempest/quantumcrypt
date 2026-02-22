@@ -7,7 +7,12 @@ export default function Navbar() {
       <div className={styles.container}>
         <div className={styles.left}>
           <Link href="/" className={styles.logo}>
-            QuantumCrypt
+            <img
+              src="/images/logo.png"
+              alt="qcrypt logo"
+              className={styles.icon}
+            />
+            <span>qcrypt</span>
           </Link>
           <span className="badge">v0.1.0-beta</span>
         </div>

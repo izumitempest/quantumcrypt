@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs-site/public/images/logo.png" width="120" alt="qcrypt logo" />
+</p>
+
 # qcrypt 🔐
 
 **Developer-friendly Python library for post-quantum cryptography**
