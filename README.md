@@ -8,17 +8,17 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status](https://img.shields.io/badge/status-beta-orange)](https://github.com/quantumcrypt/quantumcrypt)
+[![Status](https://img.shields.io/badge/status-beta-orange)](https://github.com/Izumitempest/quantumcrypt)
 
 QuantumCrypt provides quantum-resistant encryption methods based on NIST-approved algorithms, with a focus on ease of use and practical integration into modern Python applications.
 
 ## Why QuantumCrypt?
 
-🚀 **Simple API** - Get started with 3 lines of code  
-🔒 **Quantum-Resistant** - Uses NIST-standardized ML-KEM (formerly Kyber)  
-🛡️ **Secure by Default** - Combines ML-KEM with AES-256-GCM  
-📦 **Zero Config** - Works out of the box with sensible defaults  
-🎯 **Type-Safe** - Full type hints for IDE support
+**Simple API** - Get started with 3 lines of code  
+**Quantum-Resistant** - Uses NIST-standardized ML-KEM (formerly Kyber)  
+**Secure by Default** - Combines ML-KEM with AES-256-GCM  
+**Zero Config** - Works out of the box with sensible defaults  
+**Type-Safe** - Full type hints for IDE support
 
 ## Quick Start
 
