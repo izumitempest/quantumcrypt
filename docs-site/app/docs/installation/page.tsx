@@ -13,7 +13,7 @@ export default function InstallationPage() {
         </p>
 
         <h2>Quick Install</h2>
-        <CodeBlock code="pip install quantumcrypt" language="bash" />
+        <CodeBlock code="pip install qcrypt" language="bash" />
 
         <h2>Environment Configuration</h2>
         <p>

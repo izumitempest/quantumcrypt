@@ -1,4 +1,4 @@
-# QuantumCrypt 🔐
+# qcrypt 🔐
 
 **Developer-friendly Python library for post-quantum cryptography**
 
@@ -19,7 +19,7 @@ QuantumCrypt provides quantum-resistant encryption methods based on NIST-approve
 ## Quick Start
 
 ```bash
-pip install quantumcrypt
+pip install qcrypt
 ```
 
 ### Basic Usage
@@ -84,7 +84,7 @@ decrypted = receiver.decrypt(encrypted)
 ### Install from PyPI
 
 ```bash
-pip install quantumcrypt
+pip install qcrypt
 ```
 
 ### Install from Source
@@ -274,7 +274,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - 📧 Email: <lilice308@gmail.com>
 - 💬 Discussions: [GitHub Discussions](https://github.com/quantumcrypt/quantumcrypt/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/quantumcrypt/quantumcrypt/issues)
-- 📖 Docs: [quantumcrypt.readthedocs.io](https://quantumcrypt.readthedocs.io)
+- 📖 Docs: [quantumcrypt.vercel.app](https://quantumcrypt.vercel.app)
 
 ---
 
