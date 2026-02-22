@@ -19,7 +19,7 @@ from quantumcrypt.exceptions import (
 class KeyPair:
     """
     Represents a cryptographic key pair (public and secret keys).
-    
+
     Attributes:
         public_key: The public key bytes
         secret_key: The secret key bytes (should be kept confidential)
@@ -29,7 +29,7 @@ class KeyPair:
     def __init__(self, public_key: bytes, secret_key: bytes, algorithm: str):
         """
         Initialize a KeyPair.
-        
+
         Args:
             public_key: Public key bytes
             secret_key: Secret key bytes
@@ -46,27 +46,60 @@ class KeyPair:
             f"secret_key_size={len(self.secret_key)})"
         )
 
+    def to_dict(self) -> dict:
+        """
+        Serialize the keypair to a dictionary of hex strings.
+
+        WARNING: This output contains the secret key in plain hex.
+        Handle with extreme caution and encrypt if storing.
+
+        Returns:
+            Dictionary containing algorithm, public_key (hex), and secret_key (hex)
+        """
+        return {
+            "algorithm": self.algorithm,
+            "public_key": self.public_key.hex(),
+            "secret_key": self.secret_key.hex() if self.secret_key else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "KeyPair":
+        """
+        Create a KeyPair from a dictionary of hex strings.
+
+        Args:
+            data: Dictionary from to_dict()
+
+        Returns:
+            Initialized KeyPair object
+        """
+        return cls(
+            public_key=bytes.fromhex(data["public_key"]),
+            secret_key=bytes.fromhex(data["secret_key"]) if data.get("secret_key") else b"",
+            algorithm=data["algorithm"],
+        )
+
 
 class MLKEM768:
     """
     ML-KEM-768 (formerly Kyber768) implementation.
-    
+
     This is the recommended algorithm for most applications, providing
     security level 3 (equivalent to AES-192). It offers a good balance
     between performance and security.
-    
+
     Security Level: NIST Level 3 (192-bit)
     Public Key: 1,184 bytes
     Secret Key: 2,400 bytes
     Ciphertext: 1,088 bytes
-    
+
     Example:
         >>> kem = MLKEM768()
         >>> keypair = kem.generate_keypair()
-        >>> 
+        >>>
         >>> # Encapsulation (sender side)
         >>> ciphertext, shared_secret = kem.encapsulate(keypair.public_key)
-        >>> 
+        >>>
         >>> # Decapsulation (receiver side)
         >>> recovered_secret = kem.decapsulate(keypair.secret_key, ciphertext)
         >>> assert shared_secret == recovered_secret
@@ -85,10 +118,10 @@ class MLKEM768:
     def generate_keypair(self) -> KeyPair:
         """
         Generate a new key pair.
-        
+
         Returns:
             KeyPair object containing public and secret keys
-            
+
         Raises:
             KeyGenerationError: If key generation fails
         """
@@ -102,18 +135,18 @@ class MLKEM768:
     def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
         """
         Encapsulate a shared secret using the public key.
-        
+
         This generates a random shared secret and encrypts it with the
         public key. The ciphertext can be sent over an insecure channel.
-        
+
         Args:
             public_key: Public key bytes from generate_keypair()
-            
+
         Returns:
             Tuple of (ciphertext, shared_secret)
             - ciphertext: Encrypted key material to send to recipient
             - shared_secret: Secret key material (keep confidential)
-            
+
         Raises:
             EncryptionError: If encapsulation fails
             InvalidKeyError: If public key is invalid
@@ -137,17 +170,17 @@ class MLKEM768:
     def decapsulate(self, secret_key: bytes, ciphertext: bytes) -> bytes:
         """
         Decapsulate the shared secret using the secret key.
-        
+
         This recovers the shared secret from the ciphertext using the
         secret key. The recovered secret will match the one from encapsulate().
-        
+
         Args:
             secret_key: Secret key bytes from generate_keypair()
             ciphertext: Ciphertext from encapsulate()
-            
+
         Returns:
             Shared secret bytes (matches encapsulate output)
-            
+
         Raises:
             DecryptionError: If decapsulation fails
             InvalidKeyError: If secret key or ciphertext is invalid
@@ -177,18 +210,18 @@ class MLKEM768:
 class MLKEM1024:
     """
     ML-KEM-1024 (formerly Kyber1024) implementation.
-    
+
     This provides the highest security level, suitable for applications
     requiring long-term security or those handling highly sensitive data.
-    
+
     Security Level: NIST Level 5 (256-bit, equivalent to AES-256)
     Public Key: 1,568 bytes
     Secret Key: 3,168 bytes
     Ciphertext: 1,568 bytes
-    
+
     Note: Higher security comes with larger key sizes and slightly
     slower performance compared to ML-KEM-768.
-    
+
     Example:
         >>> kem = MLKEM1024()
         >>> keypair = kem.generate_keypair()
@@ -210,10 +243,10 @@ class MLKEM1024:
     def generate_keypair(self) -> KeyPair:
         """
         Generate a new key pair.
-        
+
         Returns:
             KeyPair object containing public and secret keys
-            
+
         Raises:
             KeyGenerationError: If key generation fails
         """
@@ -227,13 +260,13 @@ class MLKEM1024:
     def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
         """
         Encapsulate a shared secret using the public key.
-        
+
         Args:
             public_key: Public key bytes from generate_keypair()
-            
+
         Returns:
             Tuple of (ciphertext, shared_secret)
-            
+
         Raises:
             EncryptionError: If encapsulation fails
             InvalidKeyError: If public key is invalid
@@ -257,14 +290,14 @@ class MLKEM1024:
     def decapsulate(self, secret_key: bytes, ciphertext: bytes) -> bytes:
         """
         Decapsulate the shared secret using the secret key.
-        
+
         Args:
             secret_key: Secret key bytes from generate_keypair()
             ciphertext: Ciphertext from encapsulate()
-            
+
         Returns:
             Shared secret bytes
-            
+
         Raises:
             DecryptionError: If decapsulation fails
             InvalidKeyError: If secret key or ciphertext is invalid
