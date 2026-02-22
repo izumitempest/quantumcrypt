@@ -32,6 +32,9 @@ dependencies = [
     "typing-extensions>=4.0.0",
 ]
 
+[project.scripts]
+quantumcrypt = "quantumcrypt.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",

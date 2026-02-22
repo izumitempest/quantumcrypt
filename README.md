@@ -271,7 +271,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📧 Email: lilice308@gmail.com
+- 📧 Email: <lilice308@gmail.com>
 - 💬 Discussions: [GitHub Discussions](https://github.com/quantumcrypt/quantumcrypt/discussions)
 - 🐛 Issues: [GitHub Issues](https://github.com/quantumcrypt/quantumcrypt/issues)
 - 📖 Docs: [quantumcrypt.readthedocs.io](https://quantumcrypt.readthedocs.io)
@@ -279,3 +279,34 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **⚠️ Remember: Quantum computers capable of breaking current encryption are predicted by 2029-2034. Start your PQC transition today!**
+
+## CLI Usage
+
+QuantumCrypt comes with a convenient CLI for common operations:
+
+### Key Generation
+
+```bash
+quantumcrypt keygen --type kem --alg ML-KEM-768 --out my_keys.json
+quantumcrypt keygen --type sig --alg ML-DSA-65 --out my_sig_keys.json
+```
+
+### Encryption & Decryption
+
+```bash
+# Encrypt
+quantumcrypt encrypt data.txt data.enc --key my_keys.json --hybrid
+
+# Decrypt
+quantumcrypt decrypt data.enc data.dec --key my_keys.json
+```
+
+### Signing & Verification
+
+```bash
+# Sign
+quantumcrypt sign data.txt data.sig --key my_sig_keys.json
+
+# Verify
+quantumcrypt verify data.txt --sig data.sig --key my_sig_keys.json
+```
