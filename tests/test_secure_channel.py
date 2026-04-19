@@ -112,15 +112,43 @@ class TestSecureChannel:
             channel2.decrypt(encrypted)
 
     def test_corrupted_ciphertext_fails(self):
-        """Test that corrupted ciphertext fails to decrypt."""
+        """Test that corrupted ciphertext fails to decrypt (AES-GCM Tag Failure)."""
         channel = SecureChannel.create()
-        encrypted = channel.encrypt(b"test")
+        encrypted = bytearray(channel.encrypt(b"test"))
 
-        # Corrupt the ciphertext
-        corrupted = encrypted[:-5] + b"xxxxx"
+        # Mutate the AES-GCM MAC at the very end
+        encrypted[-1] ^= 0xFF
 
         with pytest.raises(DecryptionError):
-            channel.decrypt(corrupted)
+            channel.decrypt(bytes(encrypted))
+
+    def test_header_malleability_fails(self):
+        """Test that modifying the unencrypted header fails decryption."""
+        channel = SecureChannel.create()
+        encrypted = bytearray(channel.encrypt(b"test message"))
+
+        # Mutate version (byte 0)
+        encrypted[0] = 0x99
+        with pytest.raises(DecryptionError):
+            channel.decrypt(bytes(encrypted))
+            
+        encrypted[0] = 0x01 # restore
+        
+        # Mutate flags (byte 1)
+        encrypted[1] ^= 0xFF
+        with pytest.raises(DecryptionError):
+            channel.decrypt(bytes(encrypted))
+
+    def test_kem_ciphertext_corruption_fails(self):
+        """Test that corrupting KEM layer fails properly."""
+        channel = SecureChannel.create()
+        encrypted = bytearray(channel.encrypt(b"test message"))
+
+        # KEM CT starts at offset 6
+        encrypted[6] ^= 0xFF  # Flip a bit in KEM CT
+
+        with pytest.raises(DecryptionError):
+            channel.decrypt(bytes(encrypted))
 
     def test_invalid_package_format_fails(self):
         """Test that invalid package format raises error."""
