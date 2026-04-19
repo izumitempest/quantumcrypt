@@ -13,6 +13,15 @@ from quantumcrypt.sig import MLDSA44, MLDSA65, MLDSA87
 from quantumcrypt.exceptions import EncryptionError, DecryptionError
 
 
+def check_overwrite(filepath):
+    """Check if file exists and ask for confirmation to overwrite."""
+    if os.path.exists(filepath):
+        resp = input(f"File '{filepath}' already exists. Overwrite? [y/N]: ")
+        if resp.lower() != "y":
+            print("Operation cancelled.")
+            sys.exit(1)
+
+
 def cmd_keygen(args):
     """Handle keypair generation."""
     if args.type == "kem":
@@ -35,9 +44,12 @@ def cmd_keygen(args):
     data = kp.to_dict(password=password)
 
     if args.out:
-        with open(args.out, "w") as f:
+        check_overwrite(args.out)
+        flags = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+        fd = os.open(args.out, flags, 0o600)
+        with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2)
-        print(f"Keypair saved to {args.out}")
+        print(f"Keypair saved securely to {args.out} (0600)")
     else:
         print(json.dumps(data, indent=2))
 
@@ -63,6 +75,7 @@ def cmd_encrypt(args):
 
     try:
         package = channel.encrypt(plaintext)
+        check_overwrite(args.output)
         with open(args.output, "wb") as f:
             f.write(package)
         print(f"Encrypted data saved to {args.output}")
@@ -89,6 +102,7 @@ def cmd_decrypt(args):
 
     try:
         plaintext = channel.decrypt(package)
+        check_overwrite(args.output)
         with open(args.output, "wb") as f:
             f.write(plaintext)
         print(f"Decrypted data saved to {args.output}")
@@ -120,6 +134,7 @@ def cmd_sign(args):
 
     try:
         signature = engine.sign(data, kp.secret_key)
+        check_overwrite(args.output)
         with open(args.output, "wb") as f:
             f.write(signature)
         print(f"Signature saved to {args.output}")

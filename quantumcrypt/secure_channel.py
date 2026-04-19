@@ -5,6 +5,7 @@ This is the main interface most developers should use. It provides simple,
 secure defaults while hiding cryptographic complexity.
 """
 
+from typing import Tuple
 from typing import Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
@@ -14,6 +15,36 @@ import os
 from cryptography.hazmat.primitives.asymmetric import x25519
 from quantumcrypt.kem import MLKEM768, MLKEM1024, KeyPair
 from quantumcrypt.exceptions import EncryptionError, DecryptionError
+
+
+class SecureSession:
+    """
+    A lightweight, symmetric session for encrypting multiple messages.
+    
+    Instead of performing a heavy KEM encapsulation per-message,
+    use SecureChannel.initiate_session() to generate a SecureSession, 
+    and encrypt subsequent messages symmetrically.
+    """
+    def __init__(self, aes_key: bytes):
+        self._aes_key = aes_key
+        self._aesgcm = AESGCM(self._aes_key)
+
+    def encrypt(self, plaintext: bytes) -> bytes:
+        """Symmetrically encrypt a message."""
+        nonce = os.urandom(12)
+        ciphertext = self._aesgcm.encrypt(nonce, plaintext, None)
+        return nonce + ciphertext
+
+    def decrypt(self, package: bytes) -> bytes:
+        """Symmetrically decrypt a message."""
+        if len(package) < 28: # 12 nonce + 16 MAC minimum 
+            raise DecryptionError("Package too short")
+        nonce = package[:12]
+        ciphertext = package[12:]
+        try:
+            return self._aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as e:
+            raise DecryptionError(f"Session decryption failed: {e}")
 
 
 class SecureChannel:
@@ -262,6 +293,44 @@ class SecureChannel:
 
         except Exception as e:
             raise DecryptionError(f"Decryption failed: {e}")
+
+    def initiate_session(self) -> Tuple[bytes, SecureSession]:
+        """
+        Establish a symmetric session to avoid per-message KEM overhead.
+        
+        Returns:
+            Tuple containing the KEM ciphertext (handshake packet) to send to receiver,
+            and the SecureSession object for symmetric message encryption.
+        """
+        if self.keypair is None:
+            raise EncryptionError("No keypair available")
+            
+        kem_ciphertext, shared_secret = self._kem.encapsulate(self.keypair.public_key)
+        aes_key = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=None,
+            info=b"quantumcrypt-aes-key",
+        ).derive(shared_secret)
+        
+        return kem_ciphertext, SecureSession(aes_key)
+
+    def accept_session(self, kem_ciphertext: bytes) -> SecureSession:
+        """
+        Accept a KEM handshake and return a symmetric SecureSession.
+        """
+        if self.keypair is None or not self.keypair.secret_key:
+            raise DecryptionError("No secret key available")
+            
+        shared_secret = self._kem.decapsulate(self.keypair.secret_key, kem_ciphertext)
+        aes_key = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=None,
+            info=b"quantumcrypt-aes-key",
+        ).derive(shared_secret)
+        
+        return SecureSession(aes_key)
 
     def __repr__(self) -> str:
         has_secret = bool(self.keypair and self.keypair.secret_key)
