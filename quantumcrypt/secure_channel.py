@@ -5,6 +5,7 @@ This is the main interface most developers should use. It provides simple,
 secure defaults while hiding cryptographic complexity.
 """
 
+import time
 from typing import Tuple
 from typing import Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -187,18 +188,20 @@ class SecureChannel:
             # Step 1: Use ML-KEM to generate shared secret
             kem_ciphertext, shared_secret = self._kem.encapsulate(self.keypair.public_key)
 
-            # Step 2: Derive AES key from shared secret using HKDF
+            # Step 2: Derive AES key mapped cryptographically to Receiver Identity
+            info_binding = b"quantumcrypt-aes-key-" + self.keypair.public_key
             aes_key = HKDF(
                 algorithm=hashes.SHA256(),
                 length=32,  # 256 bits for AES-256
                 salt=None,
-                info=b"quantumcrypt-aes-key",
+                info=info_binding,
             ).derive(shared_secret)
 
-            # Step 3: Construct cryptographic header
+            # Step 3: Construct cryptographic header with Replay Protection (Timestamp)
             flags = 0x00
             kem_ct_len = len(kem_ciphertext).to_bytes(4, "big")
-            header = b"\x01" + bytes([flags]) + kem_ct_len + kem_ciphertext
+            timestamp = int(time.time()).to_bytes(8, "big")
+            header = b"\x01" + bytes([flags]) + kem_ct_len + kem_ciphertext + timestamp
 
             # Step 4: Encrypt plaintext with AES-256-GCM using header as AAD
             nonce = os.urandom(12)  # 96-bit nonce for GCM
@@ -265,6 +268,14 @@ class SecureChannel:
 
             kem_ciphertext = package[offset : offset + kem_ct_len]
             offset += kem_ct_len
+            
+            timestamp = int.from_bytes(package[offset : offset + 8], "big")
+            offset += 8
+            
+            # Security Fix: Replay Protection & Expiry
+            current_time = int(time.time())
+            if abs(current_time - timestamp) > 300:  # 5 minute hard window
+                raise DecryptionError("Package rejected: Timestamp expired or skewed (Replay Protection)")
 
             # Reconstruct the header for AAD verification
             header = package[:offset]
@@ -277,12 +288,13 @@ class SecureChannel:
             # Step 2: Recover shared secret using ML-KEM
             shared_secret = self._kem.decapsulate(self.keypair.secret_key, kem_ciphertext)
 
-            # Step 3: Derive AES key from shared secret
+            # Step 3: Derive AES key structurally bound to Identity
+            info_binding = b"quantumcrypt-aes-key-" + self.keypair.public_key
             aes_key = HKDF(
                 algorithm=hashes.SHA256(),
                 length=32,
                 salt=None,
-                info=b"quantumcrypt-aes-key",
+                info=info_binding,
             ).derive(shared_secret)
 
             # Step 4: Decrypt ciphertext with AES-256-GCM using AAD verification
@@ -306,11 +318,12 @@ class SecureChannel:
             raise EncryptionError("No keypair available")
             
         kem_ciphertext, shared_secret = self._kem.encapsulate(self.keypair.public_key)
+        info_binding = b"quantumcrypt-aes-key-" + self.keypair.public_key
         aes_key = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
             salt=None,
-            info=b"quantumcrypt-aes-key",
+            info=info_binding,
         ).derive(shared_secret)
         
         return kem_ciphertext, SecureSession(aes_key)
@@ -323,11 +336,12 @@ class SecureChannel:
             raise DecryptionError("No secret key available")
             
         shared_secret = self._kem.decapsulate(self.keypair.secret_key, kem_ciphertext)
+        info_binding = b"quantumcrypt-aes-key-" + self.keypair.public_key
         aes_key = HKDF(
             algorithm=hashes.SHA256(),
             length=32,
             salt=None,
-            info=b"quantumcrypt-aes-key",
+            info=info_binding,
         ).derive(shared_secret)
         
         return SecureSession(aes_key)

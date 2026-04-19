@@ -50,6 +50,18 @@ def cmd_keygen(args):
         with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2)
         print(f"Keypair saved securely to {args.out} (0600)")
+        
+        # Security Issue 1. (Distribution Trap Prevention)
+        pub_out = f"{args.out}.pub"
+        check_overwrite(pub_out)
+        pub_data = {
+            "algorithm": kp.algorithm,
+            "public_key": kp.public_key.hex()
+        }
+        with open(pub_out, "w") as f:
+            json.dump(pub_data, f, indent=2)
+        print(f"Public key automatically exported to {pub_out} (Safe to share)")
+        
     else:
         print(json.dumps(data, indent=2))
 
@@ -174,6 +186,25 @@ def cmd_verify(args):
         sys.exit(1)
 
 
+def cmd_export_pub(args):
+    """Handle safe public key extraction."""
+    with open(args.key, "r") as f:
+        key_data = json.load(f)
+        
+    pub_data = {
+        "algorithm": key_data["algorithm"],
+        "public_key": key_data["public_key"]
+    }
+    
+    if args.out:
+        check_overwrite(args.out)
+        with open(args.out, "w") as f:
+            json.dump(pub_data, f, indent=2)
+        print(f"Public key safely exported to {args.out}")
+    else:
+        print(json.dumps(pub_data, indent=2))
+
+
 def main():
     parser = argparse.ArgumentParser(description="QuantumCrypt CLI Utility")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
@@ -211,6 +242,11 @@ def main():
     ver_parser.add_argument("--sig", required=True, help="Signature file")
     ver_parser.add_argument("--key", required=True, help="Public key JSON file")
 
+    # Export Public Key
+    exp_parser = subparsers.add_parser("export-pub", help="Extract safe public key from keypair")
+    exp_parser.add_argument("--key", required=True, help="Keypair JSON file")
+    exp_parser.add_argument("--out", help="Output JSON file for public key")
+
     args = parser.parse_args()
 
     if args.command == "keygen":
@@ -223,6 +259,8 @@ def main():
         cmd_sign(args)
     elif args.command == "verify":
         cmd_verify(args)
+    elif args.command == "export-pub":
+        cmd_export_pub(args)
     else:
         parser.print_help()
 
