@@ -6,6 +6,7 @@ import argparse
 import sys
 import json
 import os
+import getpass
 from quantumcrypt import SecureChannel
 from quantumcrypt.kem import KeyPair, MLKEM768, MLKEM1024
 from quantumcrypt.sig import MLDSA44, MLDSA65, MLDSA87
@@ -25,7 +26,13 @@ def cmd_keygen(args):
             engine = MLDSA65()
 
     kp = engine.generate_keypair()
-    data = kp.to_dict()
+    
+    # Prompt for password to secure the key
+    print("WARNING: Secret keys should be encrypted for storage.")
+    pwd = getpass.getpass("Enter password to encrypt secret key (leave blank for unencrypted hex): ")
+    password = pwd if pwd.strip() else None
+
+    data = kp.to_dict(password=password)
 
     if args.out:
         with open(args.out, "w") as f:
@@ -43,7 +50,12 @@ def cmd_encrypt(args):
     if args.key:
         with open(args.key, "r") as f:
             key_data = json.load(f)
-        kp = KeyPair.from_dict(key_data)
+            
+        password = None
+        if key_data.get("encrypted"):
+            password = getpass.getpass("Enter password to decrypt key: ")
+            
+        kp = KeyPair.from_dict(key_data, password=password)
         channel = SecureChannel(keypair=kp, algorithm=kp.algorithm, hybrid=args.hybrid)
     else:
         channel = SecureChannel.create(hybrid=args.hybrid)
@@ -66,7 +78,12 @@ def cmd_decrypt(args):
 
     with open(args.key, "r") as f:
         key_data = json.load(f)
-    kp = KeyPair.from_dict(key_data)
+        
+    password = None
+    if key_data.get("encrypted"):
+        password = getpass.getpass("Enter password to decrypt secret key: ")
+        
+    kp = KeyPair.from_dict(key_data, password=password)
 
     channel = SecureChannel(keypair=kp, algorithm=kp.algorithm)
 
@@ -87,7 +104,12 @@ def cmd_sign(args):
 
     with open(args.key, "r") as f:
         key_data = json.load(f)
-    kp = KeyPair.from_dict(key_data)
+        
+    password = None
+    if key_data.get("encrypted"):
+        password = getpass.getpass("Enter password to decrypt secret key: ")
+        
+    kp = KeyPair.from_dict(key_data, password=password)
 
     if "ML-DSA-44" in kp.algorithm:
         engine = MLDSA44()
@@ -116,7 +138,12 @@ def cmd_verify(args):
 
     with open(args.key, "r") as f:
         key_data = json.load(f)
-    kp = KeyPair.from_dict(key_data)
+        
+    password = None
+    if key_data.get("encrypted"):
+        password = getpass.getpass("Enter password to load key: ")
+        
+    kp = KeyPair.from_dict(key_data, password=password)
 
     if "ML-DSA-44" in kp.algorithm:
         engine = MLDSA44()

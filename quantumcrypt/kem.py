@@ -6,7 +6,11 @@ security levels, as standardized in FIPS 203.
 """
 
 from typing import Tuple, Optional
+import os
 import oqs
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from quantumcrypt.exceptions import (
     KeyGenerationError,
@@ -46,36 +50,91 @@ class KeyPair:
             f"secret_key_size={len(self.secret_key)})"
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self, password: Optional[str] = None) -> dict:
         """
         Serialize the keypair to a dictionary of hex strings.
 
-        WARNING: This output contains the secret key in plain hex.
-        Handle with extreme caution and encrypt if storing.
+        WARNING: If no password is provided, this output contains the 
+        secret key in plain hex. Handle with extreme caution.
 
         Returns:
-            Dictionary containing algorithm, public_key (hex), and secret_key (hex)
+            Dictionary containing algorithm, public_key, and optionally encrypted secret_key
         """
-        return {
+        data = {
             "algorithm": self.algorithm,
             "public_key": self.public_key.hex(),
-            "secret_key": self.secret_key.hex() if self.secret_key else None,
         }
+        
+        if self.secret_key:
+            if password:
+                salt = os.urandom(16)
+                kdf = PBKDF2HMAC(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=salt,
+                    iterations=480000,
+                )
+                aes_key = kdf.derive(password.encode())
+                aesgcm = AESGCM(aes_key)
+                nonce = os.urandom(12)
+                ciphertext = aesgcm.encrypt(nonce, self.secret_key, b"quantumcrypt-key")
+                
+                data["secret_key"] = ciphertext.hex()
+                data["salt"] = salt.hex()
+                data["nonce"] = nonce.hex()
+                data["encrypted"] = True
+            else:
+                data["secret_key"] = self.secret_key.hex()
+                data["encrypted"] = False
+        else:
+            data["secret_key"] = None
+            data["encrypted"] = False
+            
+        return data
 
     @classmethod
-    def from_dict(cls, data: dict) -> "KeyPair":
+    def from_dict(cls, data: dict, password: Optional[str] = None) -> "KeyPair":
         """
         Create a KeyPair from a dictionary of hex strings.
 
         Args:
             data: Dictionary from to_dict()
+            password: Password if the secret key was encrypted.
 
         Returns:
             Initialized KeyPair object
         """
+        secret_key_hex = data.get("secret_key")
+        secret_key = b""
+        
+        if secret_key_hex:
+            if data.get("encrypted", False):
+                if not password:
+                    raise InvalidKeyError("Password required to decrypt secret key")
+                
+                ciphertext = bytes.fromhex(secret_key_hex)
+                salt = bytes.fromhex(data["salt"])
+                nonce = bytes.fromhex(data["nonce"])
+                
+                kdf = PBKDF2HMAC(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=salt,
+                    iterations=480000,
+                )
+                aes_key = kdf.derive(password.encode())
+                aesgcm = AESGCM(aes_key)
+                
+                try:
+                    secret_key = aesgcm.decrypt(nonce, ciphertext, b"quantumcrypt-key")
+                except Exception:
+                    raise InvalidKeyError("Invalid password or corrupted key")
+            else:
+                secret_key = bytes.fromhex(secret_key_hex)
+
         return cls(
             public_key=bytes.fromhex(data["public_key"]),
-            secret_key=bytes.fromhex(data["secret_key"]) if data.get("secret_key") else b"",
+            secret_key=secret_key,
             algorithm=data["algorithm"],
         )
 
@@ -112,7 +171,7 @@ class MLKEM768:
         """Initialize ML-KEM-768 algorithm."""
         try:
             self._kem = oqs.KeyEncapsulation(self.ALGORITHM_NAME)
-        except Exception as e:
+        except RuntimeError as e:
             raise KeyGenerationError(f"Failed to initialize {self.DISPLAY_NAME}: {e}")
 
     def generate_keypair(self) -> KeyPair:
@@ -129,7 +188,7 @@ class MLKEM768:
             public_key = self._kem.generate_keypair()
             secret_key = self._kem.export_secret_key()
             return KeyPair(public_key, secret_key, self.DISPLAY_NAME)
-        except Exception as e:
+        except RuntimeError as e:
             raise KeyGenerationError(f"Key generation failed: {e}")
 
     def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
@@ -164,7 +223,7 @@ class MLKEM768:
         try:
             ciphertext, shared_secret = self._kem.encap_secret(public_key)
             return ciphertext, shared_secret
-        except Exception as e:
+        except RuntimeError as e:
             raise EncryptionError(f"Encapsulation failed: {e}")
 
     def decapsulate(self, secret_key: bytes, ciphertext: bytes) -> bytes:
@@ -203,7 +262,7 @@ class MLKEM768:
             with oqs.KeyEncapsulation(self.ALGORITHM_NAME, secret_key) as kem:
                 shared_secret = kem.decap_secret(ciphertext)
             return shared_secret
-        except Exception as e:
+        except RuntimeError as e:
             raise DecryptionError(f"Decapsulation failed: {e}")
 
 
@@ -237,7 +296,7 @@ class MLKEM1024:
         """Initialize ML-KEM-1024 algorithm."""
         try:
             self._kem = oqs.KeyEncapsulation(self.ALGORITHM_NAME)
-        except Exception as e:
+        except RuntimeError as e:
             raise KeyGenerationError(f"Failed to initialize {self.DISPLAY_NAME}: {e}")
 
     def generate_keypair(self) -> KeyPair:
@@ -254,7 +313,7 @@ class MLKEM1024:
             public_key = self._kem.generate_keypair()
             secret_key = self._kem.export_secret_key()
             return KeyPair(public_key, secret_key, self.DISPLAY_NAME)
-        except Exception as e:
+        except RuntimeError as e:
             raise KeyGenerationError(f"Key generation failed: {e}")
 
     def encapsulate(self, public_key: bytes) -> Tuple[bytes, bytes]:
@@ -284,7 +343,7 @@ class MLKEM1024:
         try:
             ciphertext, shared_secret = self._kem.encap_secret(public_key)
             return ciphertext, shared_secret
-        except Exception as e:
+        except RuntimeError as e:
             raise EncryptionError(f"Encapsulation failed: {e}")
 
     def decapsulate(self, secret_key: bytes, ciphertext: bytes) -> bytes:
@@ -319,5 +378,5 @@ class MLKEM1024:
             with oqs.KeyEncapsulation(self.ALGORITHM_NAME, secret_key) as kem:
                 shared_secret = kem.decap_secret(ciphertext)
             return shared_secret
-        except Exception as e:
+        except RuntimeError as e:
             raise DecryptionError(f"Decapsulation failed: {e}")

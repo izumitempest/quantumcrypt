@@ -48,6 +48,7 @@ class SecureChannel:
         Args:
             keypair: Optional pre-generated keypair. If None, will generate new one.
             algorithm: KEM algorithm to use ("ML-KEM-768" or "ML-KEM-1024")
+            hybrid: Hybrid mode (currently not implemented, will raise NotImplementedError if True)
         """
         self.algorithm = algorithm
         self.keypair: Optional[KeyPair] = keypair
@@ -55,11 +56,10 @@ class SecureChannel:
         self.x25519_key = None
 
         if self.hybrid:
-            if self.keypair and self.keypair.secret_key:
-                # Expecting hybrid key format: [kem_key][x25519_key]
-                # This is a simplification for the beta
-                pass
-            self.x25519_key = x25519.X25519PrivateKey.generate()
+            raise NotImplementedError(
+                "Hybrid mode is disabled in this beta. Proper static X25519 key packaging "
+                "is planned for v0.2.0. Do not use simulated classical secrets."
+            )
 
         # Select KEM algorithm
         if algorithm == "ML-KEM-768":
@@ -156,24 +156,6 @@ class SecureChannel:
             # Step 1: Use ML-KEM to generate shared secret
             kem_ciphertext, shared_secret = self._kem.encapsulate(self.keypair.public_key)
 
-            # Step 1.5: Hybrid logic (if enabled)
-            hybrid_data = b""
-            if self.hybrid:
-                # Generate ephemeral X25519 key for THIS session
-                ephemeral_sk = x25519.X25519PrivateKey.generate()
-                ephemeral_pk = ephemeral_sk.public_key()
-
-                # In a real hybrid KEM, we should have the recipient's static X25519 PK
-                # For this beta, we'll use a placeholder/simplified version or
-                # assume we're doing a pure ephemeral-ephemeral exchange (though KEM usually implies static PK)
-                # To make this functional for the audit, we'll simulate a shared secret
-                # derived from both.
-                classical_secret = b"simulated-classical-secret-from-x25519"
-                shared_secret = shared_secret + classical_secret
-
-                # Prepend ephemeral PK to the package so receiver can use it
-                hybrid_data = ephemeral_pk.public_bytes_raw()
-
             # Step 2: Derive AES key from shared secret using HKDF
             aes_key = HKDF(
                 algorithm=hashes.SHA256(),
@@ -182,25 +164,18 @@ class SecureChannel:
                 info=b"quantumcrypt-aes-key",
             ).derive(shared_secret)
 
-            # Step 3: Encrypt plaintext with AES-256-GCM
+            # Step 3: Construct cryptographic header
+            flags = 0x00
+            kem_ct_len = len(kem_ciphertext).to_bytes(4, "big")
+            header = b"\x01" + bytes([flags]) + kem_ct_len + kem_ciphertext
+
+            # Step 4: Encrypt plaintext with AES-256-GCM using header as AAD
             nonce = os.urandom(12)  # 96-bit nonce for GCM
             aesgcm = AESGCM(aes_key)
-            ciphertext = aesgcm.encrypt(nonce, plaintext, None)
+            ciphertext = aesgcm.encrypt(nonce, plaintext, header)
 
-            # Step 4: Package everything together
-            # Format: [version (1 byte)][flags (1 byte)][kem_ct_len (4 bytes)][kem_ct][hybrid_data][nonce][ciphertext]
-            # Flags: 0x01 = Hybrid Mode
-            flags = 0x01 if self.hybrid else 0x00
-            kem_ct_len = len(kem_ciphertext).to_bytes(4, "big")
-            package = (
-                b"\x01"
-                + bytes([flags])
-                + kem_ct_len
-                + kem_ciphertext
-                + hybrid_data
-                + nonce
-                + ciphertext
-            )
+            # Step 5: Package everything together
+            package = header + nonce + ciphertext
 
             return package
 
@@ -249,20 +224,19 @@ class SecureChannel:
                 raise DecryptionError(f"Unsupported package version: {version}")
 
             kem_ct_len = int.from_bytes(package[2:6], "big")
+            
+            # Security Fix: Prevent DoS via unbounded length slicing
+            expected_ct_len = self._kem.details["length_ciphertext"]
+            if kem_ct_len != expected_ct_len:
+                raise DecryptionError(f"Invalid KEM ciphertext length: expected {expected_ct_len}, got {kem_ct_len}")
+
             offset = 6
 
             kem_ciphertext = package[offset : offset + kem_ct_len]
             offset += kem_ct_len
 
-            is_hybrid = bool(flags & 0x01)
-            if is_hybrid:
-                # Extract X25519 ephemeral public key (32 bytes)
-                x25519_pk_bytes = package[offset : offset + 32]
-                offset += 32
-                # In real code, we'd use this to derive the classical secret
-                classical_secret = b"simulated-classical-secret-from-x25519"
-            else:
-                classical_secret = b""
+            # Reconstruct the header for AAD verification
+            header = package[:offset]
 
             nonce = package[offset : offset + 12]
             offset += 12
@@ -272,9 +246,6 @@ class SecureChannel:
             # Step 2: Recover shared secret using ML-KEM
             shared_secret = self._kem.decapsulate(self.keypair.secret_key, kem_ciphertext)
 
-            if is_hybrid:
-                shared_secret += classical_secret
-
             # Step 3: Derive AES key from shared secret
             aes_key = HKDF(
                 algorithm=hashes.SHA256(),
@@ -283,9 +254,9 @@ class SecureChannel:
                 info=b"quantumcrypt-aes-key",
             ).derive(shared_secret)
 
-            # Step 4: Decrypt ciphertext with AES-256-GCM
+            # Step 4: Decrypt ciphertext with AES-256-GCM using AAD verification
             aesgcm = AESGCM(aes_key)
-            plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+            plaintext = aesgcm.decrypt(nonce, ciphertext, header)
 
             return plaintext
 

@@ -42,11 +42,13 @@ class MLDSA:
             raise EncryptionError(f"Signing failed: {e}")
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
-        """Verify a signature using the public key."""
-        try:
-            return self._sig.verify(message, signature, public_key)
-        except Exception as e:
-            return False
+        """Verify a signature using the public key.
+
+        Returns:
+            True if the signature is valid, False otherwise.
+            Raises exceptions for invalid key/signature formats or system faults.
+        """
+        return self._sig.verify(message, signature, public_key)
 
 
 class MLDSA44(MLDSA):
