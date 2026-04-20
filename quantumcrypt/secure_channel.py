@@ -303,8 +303,8 @@ class SecureChannel:
 
             return plaintext
 
-        except Exception as e:
-            raise DecryptionError(f"Decryption failed: {e}")
+        except Exception:
+            raise DecryptionError("Cryptographic operation failed")
 
     def initiate_session(self) -> Tuple[bytes, SecureSession]:
         """

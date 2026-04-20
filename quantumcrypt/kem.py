@@ -247,6 +247,13 @@ class MLKEM768:
         if not isinstance(secret_key, bytes):
             raise InvalidKeyError("Secret key must be bytes")
 
+        if len(secret_key) != self._kem.details["length_secret_key"]:
+            raise InvalidKeyError(
+                f"Invalid secret key size: expected "
+                f"{self._kem.details['length_secret_key']}, "
+                f"got {len(secret_key)}"
+            )
+
         if not isinstance(ciphertext, bytes):
             raise InvalidKeyError("Ciphertext must be bytes")
 
@@ -363,6 +370,13 @@ class MLKEM1024:
         """
         if not isinstance(secret_key, bytes):
             raise InvalidKeyError("Secret key must be bytes")
+
+        if len(secret_key) != self._kem.details["length_secret_key"]:
+            raise InvalidKeyError(
+                f"Invalid secret key size: expected "
+                f"{self._kem.details['length_secret_key']}, "
+                f"got {len(secret_key)}"
+            )
 
         if not isinstance(ciphertext, bytes):
             raise InvalidKeyError("Ciphertext must be bytes")
