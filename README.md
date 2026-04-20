@@ -167,10 +167,26 @@ See the [`examples/`](examples/) directory for more:
 ### ⚠️ Important Notes
 
 1. **Beta Software** - This is v0.1.0-beta. Do NOT use in production without thorough testing.
-2. **No Security Audit Yet** - A professional cryptographic audit is planned before v1.0.
-3. **Built on liboqs** - This library wraps the Open Quantum Safe `liboqs` library, which provides the actual cryptographic implementations.
-4. **Key Management** - You are responsible for securely storing secret keys.
-5. **Quantum Threat Timeline** - While quantum computers capable of breaking RSA don't exist yet (predicted 2029-2034), transitioning now protects against "harvest now, decrypt later" attacks.
+2. **Anonymous Confidentiality** - `SecureChannel` currently guarantees *Anonymous Confidentiality*. The receiver is mathematically guaranteed they are the only ones who can read the message, but `SecureChannel` alone does not natively verify *who* sent it.
+3. **No Security Audit Yet** - A professional cryptographic audit is planned before v1.0.
+4. **Built on liboqs** - This library wraps the Open Quantum Safe `liboqs` library, which provides the actual cryptographic implementations.
+5. **Key Management** - You are responsible for securely storing secret keys.
+6. **Quantum Threat Timeline** - While quantum computers capable of breaking RSA don't exist yet (predicted 2029-2034), transitioning now protects against "harvest now, decrypt later" attacks.
+
+### 🛡️ Origin Authentication (Sign-then-Encrypt)
+
+If your application requires **Origin Authentication** (verifying the sender's identity), you must manually combine `SecureChannel` with `MLDSA` signatures.
+
+**CRITICAL: Avoid the "Encrypt-then-Sign" Trap**
+If you encrypt a payload and *then* sign the resulting ciphertext, an attacker can strip your signature in transit, attach their own signature to the ciphertext, and route it to the receiver. The receiver will falsely believe the payload originated from the attacker (Surreptitious Forwarding).
+
+**Always use the Sign-then-Encrypt Paradigm:**
+1. The sender signs the plaintext payload using their `ML-DSA` private key.
+2. The sender concatenates the raw signature and the plaintext into a single buffer.
+3. The sender passes that combined buffer into `SecureChannel.encrypt()`.
+4. The receiver calls `SecureChannel.decrypt()`, extracts the signature and payload, and verifies the signature against the plaintext using the sender's known public key.
+
+This guarantees the origin signature is cryptographically locked *inside* the confidentiality wrapper, rendering MitM signature stripping impossible.
 
 ### Best Practices
 
