@@ -1,8 +1,8 @@
 import React from 'react';
-import { Github, Search, BookOpen, Moon, Sun } from 'lucide-react';
+import { Github, Search, Moon, Sun, History } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 
-export const Header = () => {
+export const Header = ({ setPage }: { setPage?: (v: string) => void }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -10,9 +10,9 @@ export const Header = () => {
       <div className="h-full w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded border border-slate-200 dark:border-white/10 bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-            <BookOpen className="w-5 h-5" />
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setPage && setPage('docs')}>
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center justify-center p-0.5">
+            <img src="/images/logo.png" alt="qcrypt logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-slate-900 dark:text-white font-semibold text-lg tracking-tight hidden sm:block">qcrypt</span>
         </div>
@@ -26,6 +26,14 @@ export const Header = () => {
             </div>
             <kbd className="font-mono text-[10px] bg-slate-200 dark:bg-white/10 px-1.5 rounded text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-white/5 shadow-sm">⌘K</kbd>
           </div>
+
+          <button 
+            onClick={() => setPage && setPage('changelog')}
+            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+          >
+            <History className="w-4 h-4" />
+            <span className="hidden sm:inline">Changelog</span>
+          </button>
 
           <div className="w-px h-6 bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
 

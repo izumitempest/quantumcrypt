@@ -1,5 +1,5 @@
 {
-  "name": "QuantumCrypt Docs",
+  "name": "QuantumCrypt",
   "description": "Frontend documentation for qcrypt, a post-quantum cryptography Python library.",
   "requestFramePermissions": [],
   "majorCapabilities": []
