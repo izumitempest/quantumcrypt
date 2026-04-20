@@ -29,7 +29,7 @@ export default function Home() {
         </section>
 
         <section className={styles.grid}>
-          <div className="card">
+          <div className={styles.card}>
             <h3>Lattice-Based KEM</h3>
             <p>
               Implement Module Learning With Errors (ML-KEM) to establish
@@ -40,7 +40,7 @@ export default function Home() {
               Learn about ML-KEM →
             </Link>
           </div>
-          <div className="card">
+          <div className={styles.card}>
             <h3>FIPS 204 Signatures</h3>
             <p>
               Deploy ML-DSA (Dilithium) for robust, identity-verifying digital
@@ -50,7 +50,7 @@ export default function Home() {
               Sign and Verify →
             </Link>
           </div>
-          <div className="card">
+          <div className={styles.card}>
             <h3>Hybrid Handshake</h3>
             <p>
               Bridge the gap with X25519 + ML-KEM hybrid modes. Stay compatible

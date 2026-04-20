@@ -14,14 +14,14 @@ export default function Navbar() {
             />
             <span>qcrypt</span>
           </Link>
-          <span className="badge">v0.1.0-beta</span>
+          <span className={`badge ${styles.badgeMobile}`}>v0.1.1-beta</span>
         </div>
         <div className={styles.links}>
           <Link href="/docs" className={styles.link}>
-            Documentation
+            Docs
           </Link>
-          <Link href="/docs/cryptography" className={styles.link}>
-            Lattice Deep-Dive
+          <Link href="/changelog" className={styles.link}>
+            Changelog
           </Link>
           <Link
             href="https://github.com/izumitempest/quantumcrypt"
